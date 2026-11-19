@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# This script checks the static site.
+# With no argument, the script checks the local files.
+# With --live, the script checks the published site.
+# Exit 0: each check passed. Exit 1: a check failed. Exit 2: wrong arguments.
+set -u
+
+root="$(cd "$(dirname "$0")/.." && pwd)"
+site="https://kayenp.github.io/research"
+guide="claude-online-research-guide.html"
+title="<title>Online research with Claude</title>"
+faults=0
+
+pass() { printf 'PASS %s\n' "$1"; }
+fail() { printf 'FAIL %s\n' "$1"; faults=$((faults + 1)); }
+
+# Writes the target of the refresh element in the page text on stdin.
+refresh_target() {
+  grep -oE 'http-equiv="refresh" content="0; url=[^"]+"' | head -n 1 | sed -E 's/.*url=([^"]+)"/\1/'
+}
+
+check_local() {
+  local target
+  if [ -f "$root/index.html" ]; then
+    pass "index.html is a file"
+    target="$(refresh_target < "$root/index.html")"
+    if [ "$target" = "$guide" ]; then
+      pass "index.html sends the reader to $guide"
+    else
+      fail "index.html sends the reader to '$target', not to $guide"
+    fi
+  else
+    fail "index.html is not a file"
+  fi
+  if [ -f "$root/$guide" ] && grep -qF "$title" "$root/$guide"; then
+    pass "$guide has the title of the guide"
+  else
+    fail "$guide is missing, or does not have the title of the guide"
+  fi
+  # Without .nojekyll, GitHub Pages runs a Jekyll build on the files.
+  if [ -f "$root/.nojekyll" ]; then
+    pass ".nojekyll is a file"
+  else
+    fail ".nojekyll is not a file"
+  fi
+}
+
+# Gets one page of the site. Writes the body to the file $2 and the status to stdout.
+get() {
+  curl -s --max-time 20 -o "$2" -w '%{http_code}' "$site/$1"
+}
+
+check_live() {
+  local status file name
+  # body is not local, because the EXIT trap reads it after this function returns.
+  body="$(mktemp)"
+  trap 'rm -f "$body"' EXIT
+
+  status="$(get "" "$body")"
+  if [ "$status" = "200" ] && [ "$(refresh_target < "$body")" = "$guide" ]; then
+    pass "$site/ gives 200 and sends the reader to $guide"
+  else
+    fail "$site/ gives $status, or does not send the reader to $guide"
+  fi
+
+  status="$(get "$guide" "$body")"
+  if [ "$status" = "200" ] && grep -qF "$title" "$body"; then
+    pass "$site/$guide gives 200 and has the title of the guide"
+  else
+    fail "$site/$guide gives $status, or does not have the title of the guide"
+  fi
+
+  for file in "$root"/sources/*; do
+    [ -f "$file" ] || continue
+    name="sources/$(basename "$file")"
+    status="$(get "$name" "$body")"
+    # The site must give the same bytes as the local file.
+    if [ "$status" = "200" ] && cmp -s "$file" "$body"; then
+      pass "$site/$name gives 200 and the bytes of the local file"
+    else
+      fail "$site/$name gives $status, or does not give the bytes of the local file"
+    fi
+  done
+}
+
+case "${1-}" in
+  "") check_local ;;
+  --live) check_live ;;
+  *) printf 'usage: tools/check [--live]\n' >&2; exit 2 ;;
+esac
+
+[ "$faults" -eq 0 ]
