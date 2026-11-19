@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Online research with Claude</title>
+<style>
+:root {
+  --bg: #fbfaf7; --panel: #ffffff; --ink: #1d1c1a; --soft: #5b5850; --line: #e2ded4;
+  --accent: #b4532a; --accent-bg: #fbeee6; --code-bg: #f1eee6;
+  --v-bg: #e8eefb; --v-ink: #27408b; --i-bg: #e3f3e8; --i-ink: #1d6638;
+  --u-bg: #fbf0d6; --u-ink: #7a5300; --n-bg: #f7e3e3; --n-ink: #8a2323; --s-bg: #ece6f7; --s-ink: #4b2f8a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171614; --panel: #201f1c; --ink: #ece9e1; --soft: #a9a497; --line: #37352f;
+    --accent: #e8926a; --accent-bg: #33231b; --code-bg: #2a2824;
+    --v-bg: #1f2a47; --v-ink: #b3c5f5; --i-bg: #1a3324; --i-ink: #a5dcb7;
+    --u-bg: #3a2e12; --u-ink: #edcf85; --n-bg: #3d1e1e; --n-ink: #f0b0b0; --s-bg: #2c2444; --s-ink: #cdbdf2;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 80px; }
+header.top { border-bottom: 2px solid var(--line); padding-bottom: 20px; margin-bottom: 24px; }
+h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 8px; }
+h2 { font-size: 1.45rem; line-height: 1.25; margin: 56px 0 12px; padding-top: 12px; border-top: 2px solid var(--line); }
+h3 { font-size: 1.12rem; margin: 32px 0 8px; }
+h4 { font-size: 1rem; margin: 20px 0 6px; color: var(--soft); }
+p { margin: 0 0 14px; }
+a { color: var(--accent); }
+.meta { color: var(--soft); font-size: 0.95rem; margin: 0; }
+nav ol { columns: 2; column-gap: 32px; padding-left: 22px; margin: 8px 0 0; }
+nav li { margin-bottom: 4px; break-inside: avoid; }
+ul, ol { padding-left: 24px; margin: 0 0 16px; }
+li { margin-bottom: 6px; }
+ol.steps { counter-reset: s; list-style: none; padding-left: 0; }
+ol.steps > li { counter-increment: s; position: relative; padding: 2px 0 2px 44px; margin-bottom: 10px; }
+ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 30px; height: 30px;
+  border-radius: 50%; background: var(--accent); color: var(--bg); font-weight: 700; font-size: 0.9rem;
+  display: flex; align-items: center; justify-content: center; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font: 0.88em ui-monospace, Menlo, Consolas, monospace; }
+pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto;
+  font: 0.86rem/1.5 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; margin: 0 0 16px; }
+pre code { background: none; padding: 0; font: inherit; }
+q { font-style: italic; }
+.tw { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: 0.93rem; min-width: 560px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { background: var(--code-bg); font-weight: 650; }
+tr:last-child td { border-bottom: none; }
+.box { border-left: 4px solid var(--accent); background: var(--accent-bg); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 0 0 18px; }
+.box p:last-child, .box ul:last-child { margin-bottom: 0; }
+.box strong.h { display: block; margin-bottom: 4px; }
+.tag { display: inline-block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em; padding: 1px 7px;
+  border-radius: 10px; white-space: nowrap; vertical-align: 1px; }
+.tag.v { background: var(--v-bg); color: var(--v-ink); }
+.tag.i { background: var(--i-bg); color: var(--i-ink); }
+.tag.u { background: var(--u-bg); color: var(--u-ink); }
+.tag.n { background: var(--n-bg); color: var(--n-ink); }
+.tag.s { background: var(--s-bg); color: var(--s-ink); }
+.src { font-size: 0.88rem; color: var(--soft); }
+#sources li { font-size: 0.92rem; overflow-wrap: anywhere; }
+@media (max-width: 600px) { body { font-size: 16px; } nav ol { columns: 1; } h1 { font-size: 1.6rem; } }
+</style>
+</head>
+<body>
+<main>
+
+<header class="top">
+  <h1>Online research with Claude</h1>
+  <p class="meta">A working guide for claude.ai, Claude Code and the Claude API. Last checked: 19 November 2026.</p>
+</header>
+
+<nav aria-label="Contents">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#read">How to read this guide</a></li>
+    <li><a href="#pick">Pick the type of research</a></li>
+    <li><a href="#steps">Steps for each type</a></li>
+    <li><a href="#triggers">When a plain prompt starts a deep run</a></li>
+    <li><a href="#request">Write the request</a></li>
+    <li><a href="#check">Check the claims</a></li>
+    <li><a href="#gotchas">Gotchas</a></li>
+    <li><a href="#avoid">Prompt styles to avoid</a></li>
+    <li><a href="#conflicts">Where sources conflict</a></li>
+    <li><a href="#unconfirmed">What no source confirmed</a></li>
+    <li><a href="#sources">Sources</a></li>
+  </ol>
+</nav>
+
+<!-- 1 -->
+<section id="read">
+<h2>1. How to read this guide</h2>
+<p>Good research with Claude has three parts. You pick the right tool. You write a clear request. You check each claim that matters.</p>
+<p>The third part is the one most people skip. It is also the one with the best proof behind it. In a May 2026 test of five Claude models, the cited links worked 97 to 99 percent of the time. But the page behind the link backed up the claim only 52 to 77 percent of the time. <span class="tag i">Independent</span></p>
+
+<h3>The labels</h3>
+<p>Each fact in this guide has a label. The label tells you who said it.</p>
+<div class="tw"><table>
+<tr><th>Label</th><th>What it means</th><th>How far to trust it</th></tr>
+<tr><td><span class="tag v">Vendor</span></td><td>Anthropic, or some other company, said this about its own product.</td><td>Good for how a feature works. Weak for how well it works.</td></tr>
+<tr><td><span class="tag i">Independent</span></td><td>A group that does not sell the model measured this.</td><td>The best proof here. But look at the date and the models tested.</td></tr>
+<tr><td><span class="tag u">User report</span></td><td>One person wrote about their own test or view.</td><td>A real case, not a rule.</td></tr>
+<tr><td><span class="tag s">This session</span></td><td>It came from the Claude Code session that made this guide.</td><td>True for that one setup on that day.</td></tr>
+<tr><td><span class="tag n">Not confirmed</span></td><td>The fact came from a search summary, or the sources do not agree.</td><td>Read the page yourself before you use it.</td></tr>
+</table></div>
+
+<div class="box">
+<strong class="h">Three limits of this guide</strong>
+<ul>
+<li>No outside group has tested the newest models (Opus 5.5 and Fable 5.2) for web research. All outside numbers come from older models.</li>
+<li>Agents read the source pages. The author of this guide read their notes, not each page.</li>
+<li>Claude changes fast. Treat each fact as true on 19 November 2026, not for all time.</li>
+</ul>
+</div>
+</section>
+
+<!-- 2 -->
+<section id="pick">
+<h2>2. Pick the type of research</h2>
+<p>Pick by the size of the question. Size means the number of <strong>tool calls</strong> the question needs. One tool call is one search or one page read.</p>
+
+<h3>The rule from Anthropic</h3>
+<div class="tw"><table>
+<tr><th>Tool calls needed</th><th>What to use</th></tr>
+<tr><td>1 or 2</td><td>A normal chat with web search.</td></tr>
+<tr><td>3 or 4</td><td>The rule does not cover this. Start in a normal chat. Move up if the answer is thin.</td></tr>
+<tr><td>5 or more</td><td>Research, also called deep research.</td></tr>
+</table></div>
+<p class="src"><span class="tag v">Vendor</span> <a href="https://support.claude.com/en/articles/11095361-when-should-i-use-web-search-extended-thinking-and-research">Help article of 2 June 2026</a>. An agent read it through a summary, so the wording here is a paraphrase.</p>
+<p>The API docs give a like guide: <q>Single-fact queries typically use 1–3 searches; comparative or multientity research can use 10 or more.</q> <span class="tag v">Vendor</span></p>
+
+<h3>How to guess the size</h3>
+<p>Count the things Claude must look up. Each one needs at least one search. Many need a page read too.</p>
+<p>Three signs that a short question is large:</p>
+<ul>
+<li>It names more than one thing, such as tools, countries or years.</li>
+<li>It asks "why", "compare" or "should I".</li>
+<li>The first answer has only one or two sources for a claim that matters.</li>
+</ul>
+<p><strong>A quick test:</strong> try to write the answer as one sentence with one source. If you can, it is a one-call question. If the answer needs a table, a list of trade-offs or the word "depends", it needs many calls.</p>
+
+<h3>Two examples</h3>
+<div class="tw"><table>
+<tr><th>Question</th><th>Calls</th><th>Why</th></tr>
+<tr><td>"When was Python 3.13 released?"</td><td>1</td><td>One fact on one page. In Claude Code it can take 2, because search gives only titles and links there.</td></tr>
+<tr><td>"Should I move my project from Python 3.11 to 3.13? It uses pandas, numpy and psycopg2."</td><td>About 8</td><td>Two Python versions, three libraries, and a hunt for known problems. Some results need a page read.</td></tr>
+</table></div>
+<p class="src">These call counts show the idea. Nobody measured them.</p>
+
+<h3>Size is not the only test</h3>
+<p>A question can need eight calls and still fit a normal prompt. Ask one more thing: do the parts depend on each other?</p>
+<div class="tw"><table>
+<tr><th>Your case</th><th>Best type</th></tr>
+<tr><td>One fact, one source.</td><td>Quick lookup.</td></tr>
+<tr><td>Many calls, but one line of work. Each step builds on the last.</td><td>A multi-step prompt in one chat.</td></tr>
+<tr><td>Parts that stand alone, such as five tools to compare.</td><td>A deep run with agents side by side.</td></tr>
+<tr><td>A wrong claim would cost you a lot.</td><td>A deep run with a separate check, or a normal run plus your own check.</td></tr>
+<tr><td>You want a report to keep.</td><td>A deep run.</td></tr>
+<tr><td>You need your Gmail, Drive or other linked data.</td><td>Research in claude.ai, on the web or desktop.</td></tr>
+<tr><td>You need files on disk, a run you can repeat, or your own tools.</td><td>Claude Code.</td></tr>
+<tr><td>You need a hard cap on searches or a fixed list of sites.</td><td>The API.</td></tr>
+</table></div>
+<div class="box">
+<strong class="h">Bigger is not always better</strong>
+<p>In the May 2026 test, support for cited facts fell as tool calls rose from 2 to 150. For Claude Opus 4.6 it fell from 80 percent to 58. Pick the smallest type that covers the question. <span class="tag i">Independent</span></p>
+</div>
+</section>
+
+<!-- 3 -->
+<section id="steps">
+<h2>3. Steps for each type</h2>
+
+<h3>A. Quick lookup</h3>
+<p>Use this for one fact. It works on all plans, free ones too. <span class="tag v">Vendor</span></p>
+<ol class="steps">
+<li>Ask in a normal chat.</li>
+<li>If Claude answers from memory, add the words "Search the web".</li>
+<li>Ask for the link and the date of the page.</li>
+<li>Open the page if the fact matters.</li>
+</ol>
+<p>In the new claude.ai there is no search switch. The help page says: <q>There's no web search toggle. Claude searches the web when it helps.</q> The change is rolling out in steps, so your account may still show the switch. <span class="tag v">Vendor</span></p>
+<p>All four current models have a knowledge cutoff of June 2026. A question about later events needs a search.</p>
+
+<h3>B. A multi-step prompt in one chat</h3>
+<p>Use this when the work is one line of thought, even with many calls. One agent does all of it in your chat.</p>
+<ol class="steps">
+<li>Write the request with the steps in <a href="#request">section 5</a>.</li>
+<li>Say how deep to go: one fact, a comparison or a broad survey.</li>
+<li>In Claude Code, set the effort with <code>/effort</code>. Anthropic names <code>high</code> for research.</li>
+<li>For a long task, ask Claude to keep a notes file. Each note needs the link, the date and an exact quote.</li>
+<li>If you do not want agents, say so: "Do not use subagents or the research skill."</li>
+<li>Check the claims with the steps in <a href="#check">section 6</a>.</li>
+</ol>
+<p><strong>What you give up:</strong> the agent that finds a claim also checks it. No fresh eyes look at the work.</p>
+
+<h3>C. Research in claude.ai</h3>
+<p>This is a hosted deep run. It needs no setup.</p>
+<div class="tw"><table>
+<tr><th>Fact</th><th>Detail</th></tr>
+<tr><td>Plans</td><td>Paid plans only: Pro, Max, Ultra, Team and Enterprise.</td></tr>
+<tr><td>Model</td><td>Always Opus 5.5, with Opus 4.8 as a backup. The model you pick for the chat does not change this.</td></tr>
+<tr><td>Your data</td><td>It can use connectors. It cannot use local MCP servers from Claude Desktop.</td></tr>
+<tr><td>Limits</td><td>No page gives a run time, a source count or a cap for one run. Only your plan limit applies.</td></tr>
+<tr><td>Citations</td><td>The help page says each response has citations.</td></tr>
+</table></div>
+<p class="src"><span class="tag v">Vendor</span> <a href="https://support.claude.com/en/articles/11088861-use-research-on-claude">Use research on Claude</a></p>
+<ol class="steps">
+<li>Type <code>/deep-research</code>, or click "+" and then "Research".</li>
+<li>If the run needs connectors, start it on the web or in Claude Desktop. Do not start it on a phone.</li>
+<li>Turn off the connectors that the task does not need.</li>
+<li>Do not add a general "double-check everything" line. The model is Opus 5.5, and that line makes it check too much.</li>
+<li>After the first run, open Settings, then Usage. See how much of your limit the run used.</li>
+<li>On a Team or Enterprise plan, an Owner must turn on web search in the organization settings.</li>
+</ol>
+<div class="box">
+<strong class="h">Watch out on mobile</strong>
+<p>On a phone, Research searches only the web. The help page says: <q>You won't see an error or other sign that your connectors were skipped.</q></p>
+</div>
+
+<h3>D. The bundled <code>/deep-research</code> workflow in Claude Code</h3>
+<p>This is a script that runs many agents in the background. It is on all paid plans. On Pro, you turn workflows on in <code>/config</code>. It needs the WebSearch tool, so it does not work on Amazon Bedrock. <span class="tag v">Vendor</span></p>
+
+<h4>What the workflow does</h4>
+<p>The docs give four actions, in this order:</p>
+<ol>
+<li><strong>Fan out.</strong> It searches your question from several angles.</li>
+<li><strong>Fetch and cross-check.</strong> It reads the sources and compares them.</li>
+<li><strong>Vote.</strong> It votes on each claim.</li>
+<li><strong>Report.</strong> It writes one report with sources. Claims that failed the cross-check are left out.</li>
+</ol>
+<p>If the check agents cannot test a claim, the report lists it as unverified. It does not count the claim as wrong. <span class="tag v">Vendor</span></p>
+<p>The docs do <strong>not</strong> state the names of the phases, how many agents each phase starts, how many agents vote, or what counts as a pass. <span class="tag n">Not confirmed</span></p>
+<p>One user saw a run queue 123 claims for a check. So there is a claim queue, then a check stage, then a final write-up. That is one run, not a spec. <span class="tag u">User report</span></p>
+
+<h4>Steps</h4>
+<ol class="steps">
+<li>Run <code>/model</code> first. Ask Claude to use a smaller model for the search stages. If you skip this, each agent runs on your session model.</li>
+<li>Ask a narrow question first. Anthropic says to <q>run the workflow on a small slice first</q>.</li>
+<li>Start the run with <code>/deep-research</code> and your question.</li>
+<li>At the approval prompt, pick "View raw script" to read the real steps. Ctrl+G opens the script in your editor. You can then pick "No", and no agents start.</li>
+<li>Open <code>/workflows</code> to see each phase and the token use of each agent. Press <code>x</code> to stop a run that costs too much.</li>
+<li>To keep the script, select the run in <code>/workflows</code> and press <code>s</code>. You can then edit it and run it by name.</li>
+<li>Check the claims that matter. The vote lowers the risk. It does not remove it.</li>
+</ol>
+<p class="src"><span class="tag v">Vendor</span> <a href="https://code.claude.com/docs/en/workflows">Dynamic workflows</a></p>
+<div class="box">
+<strong class="h">The main risk is cost</strong>
+<ul>
+<li>A warning shows above 25 agents or 1.5 million planned tokens. It does not stop the run. <span class="tag v">Vendor</span></li>
+<li>In July 2026, one user ran a broad question. The run started 111 agents and checked 25 of 123 claims. It hit the Max 5x limit in about 30 minutes, and no report came out. The user blamed agents that ran on the top model. <span class="tag u">User report</span></li>
+<li>Anthropic gives no cost figure for a normal run. <span class="tag n">Not confirmed</span></li>
+</ul>
+</div>
+
+<h3>E. A skill-based deep run in Claude Code</h3>
+<p>A skill is a set of saved steps that Claude loads when a prompt fits. A research skill splits the work among agents. This guide came from such a run. <span class="tag s">This session</span></p>
+<ol>
+<li>The lead agent split the question into four parts.</li>
+<li>Four agents each took one part. Each wrote notes to a file, with a link for each fact.</li>
+<li>One writer agent read the notes and wrote the report.</li>
+</ol>
+<p>That run used about 900,000 agent tokens. It had no vote on claims, so it is not the same as the bundled workflow.</p>
+<h4>Steps</h4>
+<ol class="steps">
+<li>Say "Use the deep-research skill", or let the skill load when the prompt fits.</li>
+<li>Give each part a brief with four things: the goal, the output format, the sources to use, and the edges of the task.</li>
+<li>Tell agents to mark how they got each fact: read the page, or saw only a search summary.</li>
+<li>Have a fresh agent check claims. One user's rule: <q>The agent that finds a claim never verifies it</q>.</li>
+<li>Read the report yourself, then check the claims that matter.</li>
+</ol>
+<p>The four-part brief comes from Anthropic's June 2025 post. In that post, a short brief made agents repeat the same searches. <span class="tag v">Vendor</span></p>
+
+<h3>F. The API</h3>
+<p>Use the API when you need a setting for each search and each fetch.</p>
+<ol class="steps">
+<li>Start with Opus 5.5. Raise <code>effort</code> before you change the model. Anthropic names Fable 5.2 for multi-step deep research, at twice the price.</li>
+<li>Set <code>max_uses</code> to cap the searches in one turn.</li>
+<li>Set <code>allowed_domains</code> or <code>blocked_domains</code>. Do not set both, because the API then returns a 400 error.</li>
+<li>Turn on citations for web fetch. Search always cites. Fetch cites only if you ask.</li>
+<li>If a reply stops with <code>pause_turn</code>, send the assistant message back as it is.</li>
+<li>If you show the output to end users, show the citations too. The docs make this a duty.</li>
+</ol>
+<ul>
+<li>Web search costs $10 for 1,000 searches, plus tokens. Web fetch costs only tokens.</li>
+<li>Web fetch reads only a link that is already in the chat. It cannot read pages that need JavaScript.</li>
+<li>Search results count as input tokens in this turn and in later turns.</li>
+<li>New tool versions filter results with code by default. That mode does not qualify for ZDR or HIPAA.</li>
+</ul>
+<p class="src"><span class="tag v">Vendor</span> <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool">Web search tool</a>, <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-fetch-tool">Web fetch tool</a>, <a href="https://platform.claude.com/docs/en/about-claude/models/choosing-a-model">Choosing a model</a></p>
+
+<h3>Side by side</h3>
+<div class="tw"><table>
+<tr><th></th><th>Normal prompt</th><th>Deep run</th></tr>
+<tr><td><strong>Who works</strong></td><td>One agent, in your chat.</td><td>A lead agent that starts many agents at once.</td></tr>
+<tr><td><strong>How it searches</strong></td><td>It picks each next step. It stops when it thinks it has enough.</td><td>It searches from several angles on purpose.</td></tr>
+<tr><td><strong>Who checks</strong></td><td>The same agent that found the claim.</td><td>In the bundled workflow, other agents cross-check and vote.</td></tr>
+<tr><td><strong>Weak claims</strong></td><td>They can stay in the answer.</td><td>The workflow drops them or lists them as unverified.</td></tr>
+<tr><td><strong>Output</strong></td><td>A chat answer.</td><td>A report with sources.</td></tr>
+<tr><td><strong>Cost and time</strong></td><td>Low.</td><td>High.</td></tr>
+<tr><td><strong>Your chat</strong></td><td>Each search result lands in it.</td><td>Only the report comes back.</td></tr>
+</table></div>
+<p>The gain from a deep run comes from wide cover and a fresh check. It does not come from the count of agents. The Claude Code docs say: <q>Handing the same task to a subagent doesn't make the answer any better. A fresh reviewer does help, because it hasn't seen your reasoning</q>. <span class="tag v">Vendor</span></p>
+<p>Nobody ran the same question both ways. So no one has measured how much better the report is. <span class="tag n">Not confirmed</span></p>
+</section>
+
+<!-- 4 -->
+<section id="triggers">
+<h2>4. When a plain prompt starts a deep run</h2>
+<p>A plain prompt can start a deep run. It did in the session that made this guide. The first prompt had no command, and five agents ran. <span class="tag s">This session</span></p>
+
+<h3>What starts it in Claude Code</h3>
+<ul>
+<li><strong>A skill fits your prompt.</strong> This is the main cause. Claude reads each skill's summary and loads the one that fits. Words such as "research", "compare", "best practices" or "report" can start a research skill.</li>
+<li><strong>Claude starts agents on its own.</strong> It can do this for a broad question with parts that stand alone.</li>
+<li><strong>A high effort level.</strong> It makes Claude use more tool calls before it answers.</li>
+<li><strong>Your own rules.</strong> A line in CLAUDE.md or a memory note can ask for a set way to research.</li>
+</ul>
+
+<h3>What does not start by itself</h3>
+<ul>
+<li><strong>The bundled workflow.</strong> In that session, Claude could start a workflow only if the user asked for one, typed the command, or used a skill that calls for it. <span class="tag s">This session</span></li>
+</ul>
+
+<h3>In claude.ai</h3>
+<p>The help page says you start Research with the button or the command. But a normal chat can also run many searches in a row. That can look like Research. No source says if the new claude.ai ever starts Research by itself. <span class="tag n">Not confirmed</span></p>
+
+<h3>How to tell which one ran</h3>
+<div class="tw"><table>
+<tr><th>What you see</th><th>What ran</th></tr>
+<tr><td>Only search and fetch calls in your chat.</td><td>A normal run.</td></tr>
+<tr><td>A "Skill" line, then tasks that start.</td><td>A skill-based run.</td></tr>
+<tr><td>A run in <code>/workflows</code>.</td><td>A workflow.</td></tr>
+</table></div>
+
+<h3>How to pick the path</h3>
+<p>New models do just what you say. So say which path you want.</p>
+<pre><code>Light path:
+Answer this yourself with a few searches. Do not use subagents or the research skill.
+
+Heavy path:
+Use the deep-research skill for this.</code></pre>
+</section>
+
+<!-- 5 -->
+<section id="request">
+<h2>5. Write the request</h2>
+<p>The basic rules did not change in 2026. Be clear, give the reason, name the format, and let Claude say "I don't know". What changed is the control. Depth now comes from the effort setting, not from strong words. <span class="tag v">Vendor</span></p>
+<p>New models also do less guessing. Anthropic says: <q>If you want Claude to do more than the task strictly requires, explicitly request it rather than relying on the model to infer this from vague prompts.</q></p>
+
+<h3>Ten steps</h3>
+<ol class="steps">
+<li>State the goal and who will read the result.</li>
+<li>Describe the output you want. Say when Claude must stop and ask.</li>
+<li>Say what a good answer looks like.</li>
+<li>Say how deep to go: one fact, a comparison or a broad survey.</li>
+<li>Give source rules. Ask for first-hand sources. Name the kinds of sites to skip.</li>
+<li>Let Claude say that it does not know.</li>
+<li>Ask for a link and an exact quote for each claim.</li>
+<li>Use plain words, and give the reason for each rule.</li>
+<li>Set the depth with <code>effort</code>. Delete lines such as "think hard".</li>
+<li>For a long task, ask for rival ideas and a notes file.</li>
+</ol>
+
+<h3>Why each step is there</h3>
+<ul>
+<li><strong>Step 5.</strong> In Anthropic's 2025 system, early agents <q>consistently chose SEO-optimized content farms</q>. Source rules in the prompt fixed that. <span class="tag v">Vendor</span></li>
+<li><strong>Step 6.</strong> Anthropic says this <q>can drastically reduce false information</q>. It gives no number, date or model for that claim. <span class="tag v">Vendor</span></li>
+<li><strong>Step 9.</strong> The Fable 5.2 page says effort <q>sets how much the model thinks, how many tool calls it makes, how long a turn takes, and how many tokens it uses.</q> At low effort, Fable 5.1 searches less and answers from memory more. So the first fix for a thin run is more effort. <span class="tag v">Vendor</span></li>
+</ul>
+
+<h3>Templates from Anthropic</h3>
+<p>For step 1, written for Fable 5:</p>
+<pre><code>I'm working on [the larger task] for [who it's for]. They need [what the output enables]. With that in mind: [request].</code></pre>
+<p>For step 10, for all current models:</p>
+<pre><code>Search for this information in a structured way. As you gather data, develop several
+competing hypotheses. Track your confidence levels in your progress notes to improve
+calibration. Regularly self-critique your approach and plan. Update a hypothesis tree or
+research notes file to persist information and provide transparency. Break down this
+complex research task systematically.</code></pre>
+
+<h3>A full example</h3>
+<p>This example joins the steps. It is built from the official parts. Nobody tested it as one prompt. <span class="tag n">Not confirmed</span></p>
+<pre><code>I'm working on a tool decision for a finance team of five people. They need to select
+one expense tool this month. With that in mind: compare the current prices and the
+export functions of [tool A], [tool B] and [tool C].
+
+This is a comparison, so cover each tool separately.
+A good answer gives a URL and an exact quote for each price and each limit.
+Prefer the vendor's own pages to review sites and news aggregators.
+If you cannot find a fact, or cannot confirm it, say so. Do not fill the gap.
+Output: one table, then a list of the claims that you could not confirm.
+Stop and ask me if the three tools do not have plans that compare.</code></pre>
+
+<h3>Which advice fits which model</h3>
+<div class="tw"><table>
+<tr><th>Where you work</th><th>Model</th><th>Advice to follow</th></tr>
+<tr><td>Research in claude.ai</td><td>Opus 5.5</td><td>The Opus pages.</td></tr>
+<tr><td>Claude Code or the API with Fable</td><td>Fable 5.x</td><td>The Fable pages.</td></tr>
+</table></div>
+<p>This matters because the two sets differ on self-check lines. See <a href="#conflicts">section 9</a>. Do not copy a prompt from one model to another without a test.</p>
+
+<h3>Two old rules that still hold</h3>
+<ul>
+<li>Put long documents at the top and the question at the end. Anthropic says this can lift quality by up to 30 percent in its tests. It gives no date or model for that number. <span class="tag v">Vendor</span></li>
+<li>Ask Claude to quote the parts that matter before it gives its view.</li>
+</ul>
+<p>For a follow-up turn, say just what you want. Do not send only "continue".</p>
+</section>
+
+<!-- 6 -->
+<section id="check">
+<h2>6. Check the claims</h2>
+<p>A link that works proves little. The main error in 2026 is a real page that does not say what the answer claims. It is not a made-up page.</p>
+
+<h3>The proof</h3>
+<div class="tw"><table>
+<tr><th>Study and date</th><th>Models tested</th><th>Result</th></tr>
+<tr><td><a href="https://arxiv.org/html/2605.06635v1">Cited but Not Verified</a>, May 2026 <span class="tag i">Independent</span></td><td>14 models. Claude: Opus 4.5, Haiku 4.5, Sonnet 4.6, Opus 4.6, Sonnet 4.5.</td><td>The page backed the fact for 76.8, 68.9, 58.7, 54.2 and 51.8 percent of citations, in that order. Links worked for 97.2 to 99.2 percent.</td></tr>
+<tr><td>Same study</td><td>GPT-5.4 and Claude Opus 4.6</td><td>Tool calls rose from 2 to 150. Support fell from 79 to 17 percent for GPT-5.4, and from 80 to 58 percent for Opus 4.6.</td></tr>
+<tr><td><a href="https://arxiv.org/html/2604.03173v1">Reference hallucinations</a>, April 2026 <span class="tag i">Independent</span></td><td>Claude 3.5 Sonnet and 3.7 Sonnet with search, Sonnet 4.5, and others.</td><td>Links that did not load: 7.8, 8.5 and 9.38 percent for the three Claude models.</td></tr>
+<tr><td><a href="https://arxiv.org/html/2509.04499v1">DeepTRACE</a>, August 2025 <span class="tag i">Independent</span></td><td>Deep research modes of GPT-5, Gemini, Perplexity and others. <strong>Not Claude.</strong></td><td>Statements with no support: 12.5 to 97.5 percent. One-sided answers to debate questions: 54.7 to 94.8 percent.</td></tr>
+<tr><td><a href="https://www.cjr.org/tow_center/we-compared-eight-ai-search-engines-theyre-all-bad-at-citing-news.php">Tow Center</a>, March 2025 <span class="tag i">Independent</span></td><td>Eight AI search tools. <strong>Not Claude.</strong></td><td>Wrong answers to more than 60 percent of queries. Paid tiers did worse than free ones, because they did not decline to answer.</td></tr>
+<tr><td><a href="https://www.ebu.ch/news/2025/10/ai-s-systemic-distortion-of-news-is-consistent-across-languages-and-territories-international-study-by-public-service-broadcaste">EBU and BBC</a>, October 2025 <span class="tag i">Independent</span></td><td>ChatGPT, Copilot, Gemini, Perplexity. <strong>Not Claude.</strong></td><td>45 percent of news answers had a major fault.</td></tr>
+</table></div>
+<p>Each study used its own task, so do not compare the numbers across rows.</p>
+<div class="box">
+<strong class="h">Two things the numbers show</strong>
+<ul>
+<li><strong>Newer was not better.</strong> Opus 4.6 scored 54.2 percent. The older Opus 4.5 scored 76.8. A new model is a reason to test again, not a reason to trust more.</li>
+<li><strong>The proof is older than the product.</strong> All Claude data is from Opus 4.6 or before. Opus 5.5 and Fable 5.2 may do better or worse. No source says which.</li>
+</ul>
+</div>
+<p>Anthropic says the same in its own docs: <q>although these techniques significantly reduce hallucinations, they don't eliminate them entirely. Always validate critical information, especially for high-stakes decisions.</q> The help page for Research has no such note. Do not read that as a claim that Research is right. <span class="tag v">Vendor</span></p>
+
+<h3>Nine check steps, best proof first</h3>
+<ol class="steps">
+<li>Pick the claims your choice rests on. You do not need to check them all.</li>
+<li>Open the cited page for each one. Read the part that backs the claim.</li>
+<li>Make sure the page is the first source. It must not be a copy, or a page that an AI wrote.</li>
+<li>Read the date of the page.</li>
+<li>If you do not know the source, search for what others say about it.</li>
+<li>Compare each quote with the page, word for word.</li>
+<li>For a debated question, ask Claude in a new turn for the best case against its first answer.</li>
+<li>Do not count a second AI tool as a check. Go to a first-hand source.</li>
+<li>In Claude Code, give the check to a fresh agent that did not find the claim.</li>
+</ol>
+
+<h3>How strong is each step?</h3>
+<ul>
+<li><strong>Step 2</strong> has the best proof: the gap between links that work and claims that hold. <span class="tag i">Independent</span></li>
+<li><strong>Step 5</strong> is called lateral reading. A 2025 review pooled 64 trials and found that it helps people judge web sources. The proof is for web pages in general, not for AI answers. <span class="tag n">Not confirmed</span></li>
+<li><strong>Step 6</strong> comes from a BBC study of February 2025. In it, 13 percent of quotes from BBC stories were changed or were not in the story. That study did not test Claude. <span class="tag n">Not confirmed</span></li>
+<li><strong>Steps 7 to 9</strong> have weaker proof. No study measured them for research reports. For step 9, Anthropic says of Fable 5: <q>Separate, fresh-context verifier subagents tend to outperform self-critique.</q> <span class="tag v">Vendor</span></li>
+</ul>
+
+<h3>Let Claude do a first pass</h3>
+<p>Anthropic gives this prompt for a press release. Change "press release" to "report".</p>
+<pre><code>After drafting, review each claim in your press release. For each claim, find a direct quote from the documents that supports it. If you can't find a supporting quote for a claim, remove that claim from the press release and mark where it was removed with empty [] brackets.</code></pre>
+<p>Anthropic made this for documents that you supply. Nobody measured it for web research. A quote that Claude gives back still needs step 6, because a model can change a quote.</p>
+
+<h3>What happens with no check</h3>
+<ul>
+<li>On 18 November 2026, one database listed 2,312 court cases that deal with made-up AI content. <span class="tag i">Independent</span></li>
+<li>In May 2025, Anthropic's own outside lawyers told a court that Claude gave a wrong title and wrong authors for a real source. A link check would not have caught it. <span class="tag n">Not confirmed</span></li>
+</ul>
+</section>
+
+<!-- 7 -->
+<section id="gotchas">
+<h2>7. Gotchas</h2>
+
+<h3>How Claude reads the web</h3>
+<ul>
+<li><strong>WebFetch gives a summary, not the page.</strong> In Claude Code, a second model reads the page and answers a prompt. The docs say: <q>This makes WebFetch lossy by design.</q> So "the page does not say X" is weak proof. Fetch again with a pointed prompt. <span class="tag v">Vendor</span></li>
+<li><strong>WebSearch gives only titles and links in Claude Code.</strong> It does not read the pages. <span class="tag v">Vendor</span></li>
+<li><strong>Some pages do not load.</strong> The API fetch tool cannot read pages that need JavaScript. An add-on reader can fill that gap, but the only numbers for one come from its seller. <span class="tag v">Vendor</span></li>
+<li><strong>A second search engine may not help.</strong> One test compared six search tools, but not with Claude and not with Claude's own search. Its top scores were too close to tell apart. <span class="tag i">Independent</span></li>
+</ul>
+
+<h3>Cost and limits</h3>
+<ul>
+<li><strong>Agents run on your session model</strong> unless you set a smaller one. This is the top cause of a large bill.</li>
+<li><strong>Claude Code has a limit of 200 searches</strong> in one interactive session. Agents share it. You can raise it with <code>CLAUDE_CODE_MAX_WEB_SEARCHES_PER_SESSION</code>. <span class="tag v">Vendor</span></li>
+<li><strong>The big-workflow warning does not stop the run.</strong> Watch <code>/workflows</code> yourself.</li>
+<li><strong>Deep runs use your plan limit faster.</strong> Anthropic says so, but gives no number.</li>
+<li><strong>Context size is seldom the limit now.</strong> Most current models hold 1 million tokens. Cost is the reason to use <code>/clear</code> and notes files. <span class="tag v">Vendor</span></li>
+<li><strong>More agents cost more.</strong> In June 2025, Anthropic said multi-agent systems use about 15 times the tokens of a chat. That number is from older models. <span class="tag n">Not confirmed</span></li>
+</ul>
+
+<h3>Where features are missing</h3>
+<ul>
+<li>Research on a phone skips connectors and shows no error.</li>
+<li>Research cannot use local MCP servers.</li>
+<li>Amazon Bedrock has no WebSearch, so the bundled workflow does not run there.</li>
+<li>Research always runs on Opus 5.5, so your model pick has no effect on it.</li>
+<li>Managed Agents runs the web tools with no search cap and no citation setting. Use the Messages API if you need those.</li>
+</ul>
+
+<h3>Hidden instructions in web pages</h3>
+<p>A web page can hold text that tells Claude to do something. This is called prompt injection. Anthropic says it is <q>far from a solved problem</q> and that <q>No browser agent is immune to prompt injection</q>. <span class="tag v">Vendor</span></p>
+<div class="tw"><table>
+<tr><th>Number</th><th>Date and product</th><th>Who said it</th></tr>
+<tr><td>Attacks worked 23.6 percent of the time with no guards, and 11.2 with guards.</td><td>August 2025, Claude for Chrome pilot.</td><td><span class="tag v">Vendor</span></td></tr>
+<tr><td>Attacks worked 1.4 percent of the time.</td><td>November 2025, Opus 4.5.</td><td><span class="tag v">Vendor</span></td></tr>
+<tr><td>Attacks worked <q>less than 0.08%</q> of the time.</td><td>Undated help page, Opus 4.8.</td><td><span class="tag v">Vendor</span></td></tr>
+<tr><td>An attack that ends in running code worked <q>80% of the time</q>.</td><td>August 2026, Claude Code with Opus 5 in auto mode.</td><td><span class="tag u">User report</span></td></tr>
+<tr><td>A hidden line in a file made Claude Cowork upload the user's files.</td><td>January 2026, Claude Cowork.</td><td><span class="tag n">Not confirmed</span></td></tr>
+</table></div>
+<p>Anthropic's numbers fell over time, but its tests changed too. So they show a trend, not a promise. The same help page that gives 0.08 percent also says: <q>The risk is not zero.</q></p>
+<p>The danger is highest when three things meet: private data, content you do not trust, and a way to send data out. Research with connectors, a signed-in browser or local files can bring all three together. <span class="tag u">User report</span></p>
+
+<h4>What to do</h4>
+<ol class="steps">
+<li>In claude.ai, turn off connectors that a web-only task does not need.</li>
+<li>In Claude in Chrome, pick "Manually approve".</li>
+<li>In Claude in Chrome, use a separate browser profile. Keep bank, health and government accounts out of it.</li>
+<li>Stop the task if Claude goes to a site you did not expect, or asks for private data.</li>
+<li>In Claude Code, turn on the sandbox and the permission rules together.</li>
+<li>Give a research agent only the tools it needs: search, fetch and write.</li>
+<li>Block <code>curl</code> and <code>wget</code>, or allow them only in the sandbox with a short list of sites.</li>
+<li>Run an agent that works alone in a container or a VM. Keep SSH keys and cloud keys out of it.</li>
+<li>Connect only the MCP servers you trust.</li>
+<li>Never run a command that a web page told Claude to run.</li>
+</ol>
+<div class="box">
+<strong class="h">The sandbox has gaps</strong>
+<ul>
+<li>The docs say: <q>The sandbox covers shell commands only. Claude's file tools, MCP servers, and hooks run outside it.</q></li>
+<li>By default, a command in the sandbox can still read key files such as <code>~/.ssh</code>.</li>
+<li>A WebFetch block on a site does not block <code>curl</code> to that site, unless the sandbox is on.</li>
+</ul>
+</div>
+
+<h3>Privacy</h3>
+<div class="tw"><table>
+<tr><th>Plan</th><th>Used for training?</th><th>How long kept</th></tr>
+<tr><td>Free, Pro, Max</td><td>Yes, if "Model Improvement" is on. Data from Claude in Chrome counts too.</td><td>Five years if on. 30 days if off.</td></tr>
+<tr><td>Incognito chats</td><td>No.</td><td></td></tr>
+<tr><td>Team, Enterprise, API</td><td>Not by default.</td><td></td></tr>
+<tr><td>Any plan, after a thumbs up or down</td><td>The full chat is stored.</td><td>Up to five years.</td></tr>
+</table></div>
+<p>For a private topic on a personal plan: turn off "Model Improvement", use an Incognito chat, and give no thumbs rating. <span class="tag v">Vendor</span></p>
+<p>No source says what the search provider gets when Claude searches. <span class="tag n">Not confirmed</span></p>
+
+<h3>Signs that do not prove quality</h3>
+<ul>
+<li>A link that works.</li>
+<li>A long report or a long source list. DeepTRACE found: <q>More sources and longer answers do not translate into reliability.</q></li>
+<li>A paid tier.</li>
+<li>A sure tone.</li>
+<li>A second AI tool that agrees. AI tools draw on the same web pages.</li>
+</ul>
+</section>
+
+<!-- 8 -->
+<section id="avoid">
+<h2>8. Prompt styles to avoid</h2>
+<p>Most of these were good advice in 2024 and 2025. Current sources now say to stop.</p>
+<div class="tw"><table>
+<tr><th>Old habit</th><th>What to do now</th><th>Why</th></tr>
+<tr><td>Capital letters such as CRITICAL and MUST.</td><td>Use plain words and give a reason.</td><td>Strong words make new models over-react. Anthropic says: <q>The fix is to soften any aggressive language.</q></td></tr>
+<tr><td>The word "never" for a soft wish.</td><td>Save "never" for hard limits.</td><td>Fable 5.2 treats an instruction with "never" as absolute.</td></tr>
+<tr><td>"Think hard" or "think step by step".</td><td>Delete the line. Set the effort level.</td><td>Thinking is always on in the newest models.</td></tr>
+<tr><td>"Show your reasoning in the answer."</td><td>Read the thinking summary.</td><td>On Fable 5 and later, this can cause a refusal.</td></tr>
+<tr><td>A general "double-check your work" line.</td><td>Depends on the model. See below.</td><td>Opus 5 checks by itself and then checks too much.</td></tr>
+<tr><td>"Be very thorough. Use tools as much as you can."</td><td>Cut the line. Say the depth you want.</td><td>Anthropic says to reduce such lines for current models.</td></tr>
+<tr><td>Long lists of strict rules, or skills made for old models.</td><td>Shorten them. State the goal.</td><td>They <q>are often too prescriptive for Claude Fable 5 and can degrade output quality.</q></td></tr>
+<tr><td>A thinking budget in the API.</td><td>Use <code>effort</code>.</td><td>On Claude 4.7 and later, a budget returns a 400 error.</td></tr>
+<tr><td>A prefilled assistant turn to force a format.</td><td>Ask for the format in the prompt.</td><td>From Claude 4.6, a prefill returns a 400 error.</td></tr>
+<tr><td>A short brief to an agent, such as "research the chip shortage".</td><td>Give the goal, the format, the sources and the edges.</td><td>In Anthropic's test, agents repeated the same searches.</td></tr>
+<tr><td>Only "continue" as a follow-up.</td><td>Say what you want next.</td><td>Fable 5.2 does best with an exact ask.</td></tr>
+<tr><td>A prompt copied from one model to another.</td><td>Test it on the new model first.</td><td>Two lines from the Opus 5.5 guide made Fable 5.2 far less likely to point out its own past mistakes.</td></tr>
+<tr><td>Agents for every task, because the context is small.</td><td>Use agents for parts that stand alone, and for a fresh check.</td><td>The context is now 1 million tokens. The same task in an agent is not better.</td></tr>
+<tr><td>A leading question, such as "Why is X the best?"</td><td>Ask what would prove the answer wrong.</td><td>In DeepTRACE, most answers to debate questions took one side. That test did not include Claude.</td></tr>
+</table></div>
+<p class="src"><span class="tag v">Vendor</span> for all rows but the last, which is <span class="tag i">Independent</span>. Main source: <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices">Prompting best practices</a>.</p>
+
+<h3>Three cases that depend on the model</h3>
+<h4>Self-check lines</h4>
+<ul>
+<li><strong>On Opus 5 and 5.5:</strong> remove general lines such as "add a final check step". This covers Research in claude.ai.</li>
+<li><strong>On Fable 5:</strong> make the check explicit in long runs, and use a fresh agent for it.</li>
+<li><strong>On every model:</strong> keep the pointed checks. Ask for more than one source that stands alone. Ask for a quote for each claim. Ask Claude to drop claims with no quote.</li>
+</ul>
+<h4>Examples in the prompt</h4>
+<ul>
+<li>The general page still says to add 3 to 5 examples.</li>
+<li>In July 2026, a member of the Claude Code team said that taking examples out helped a lot. That was about a system prompt, not a research prompt. <span class="tag u">User report</span></li>
+<li><strong>What to do:</strong> start with no examples. Add one only if the output has the wrong shape.</li>
+</ul>
+<h4>Strong words</h4>
+<ul>
+<li>The advice says to soften them. But some of Anthropic's own sample prompts still use "MUST" and "IMPORTANT".</li>
+<li><strong>What to do:</strong> copy the structure of those samples, not the tone.</li>
+</ul>
+
+<h3>Old advice that still holds</h3>
+<ul>
+<li>A role in the system prompt.</li>
+<li>Clear and direct asks, with reasons.</li>
+<li>XML tags to mark parts of a prompt.</li>
+<li>Documents first, the question last.</li>
+<li>Quotes before the view.</li>
+<li>Room to say "I don't know".</li>
+</ul>
+</section>
+
+<!-- 9 -->
+<section id="conflicts">
+<h2>9. Where sources conflict</h2>
+<p>The sources do not agree on eight points. Each one has a safe move.</p>
+<div class="tw"><table>
+<tr><th>Point</th><th>One source says</th><th>Another says</th><th>Safe move</th></tr>
+<tr><td><strong>Run time of Research</strong></td><td>Up to 45 minutes (May 2025). <span class="tag n">Not confirmed</span></td><td>About 1 to 3 minutes (June 2026). <span class="tag n">Not confirmed</span></td><td>Plan around neither. Start Research when you can wait. Read your usage after.</td></tr>
+<tr><td><strong>Self-check lines</strong></td><td>Opus 5: remove them.</td><td>Fable 5: make them explicit.</td><td>Follow the page for your model. Keep pointed checks on all models.</td></tr>
+<tr><td><strong>Examples</strong></td><td>Add 3 to 5.</td><td>Removing them helped.</td><td>Start with none. Add one if the shape is wrong.</td></tr>
+<tr><td><strong>Strong words</strong></td><td>Soften them.</td><td>Official samples still use them.</td><td>Use plain words with a reason.</td></tr>
+<tr><td><strong>Agents</strong></td><td>A multi-agent system beat one agent by 90.2 percent (June 2025, Opus 4, Anthropic's own test).</td><td>An agent <q>doesn't make the answer any better</q> for the same task (2026).</td><td>Use agents for side-by-side parts and for a fresh check. Use one agent for one line of work.</td></tr>
+<tr><td><strong>More searches</strong></td><td>Token use explained most of the gain in answers (June 2025). <span class="tag v">Vendor</span></td><td>Support for cited facts fell as calls rose (May 2026). <span class="tag i">Independent</span></td><td>The two measure different things. Fit the depth to the question. Check a long run more than a short one.</td></tr>
+<tr><td><strong>Injection</strong></td><td>Less than 0.08 percent in Anthropic's test.</td><td>80 percent in one outside attack.</td><td>The two used different products and attacks. Do not count on the model to resist. Limit what it can read, run and send.</td></tr>
+<tr><td><strong>The raw page</strong></td><td>The docs say to use <code>curl</code> when you need the raw page.</td><td>The August 2026 attack began with a move to <code>curl</code>.</td><td>Allow <code>curl</code> only with the sandbox on and a short list of sites.</td></tr>
+</table></div>
+</section>
+
+<!-- 10 -->
+<section id="unconfirmed">
+<h2>10. What no source confirmed</h2>
+<ul>
+<li><strong>How right the newest models are.</strong> No outside study tested Opus 5.5, Fable 5.2, Sonnet 5.5 or Haiku 5.5 for web research.</li>
+<li><strong>How right Research in claude.ai is.</strong> No outside study tested it. Anthropic gives no error rate.</li>
+<li><strong>How Research works inside.</strong> No current source gives its run time, its source count or its regions. No 2026 source says the 2025 design is still in use.</li>
+<li><strong>The steps inside the bundled workflow.</strong> The docs give four actions and no more.</li>
+<li><strong>Research against the Claude Code workflow.</strong> Nobody compared quality, time or cost.</li>
+<li><strong>The cost of one deep run.</strong> Anthropic gives no figure. The user numbers come from one person.</li>
+<li><strong>Claude's own search against add-on search tools.</strong> No outside test has both.</li>
+<li><strong>How much the check prompts help.</strong> Nobody measured "ask for the exact quote", a balanced prompt or notes files for web research.</li>
+<li><strong>A tested prompt for research.</strong> None exists for 2026 models. The example in this guide has no test.</li>
+<li><strong>The prompt pages for Opus 5.5, Sonnet 5.5 and Haiku 5.5.</strong> Nobody read them. The Opus advice here is from the Opus 5 page and the Opus 5.5 guide.</li>
+<li><strong>Facts seen only in search summaries.</strong> These are the 45-minute run time, the BBC quote number, the review of 64 trials, the Claude court case and the Cowork attack.</li>
+<li><strong>Help-page wording.</strong> A small model made a summary of most help pages. Text in quote marks is exact. Other text is a paraphrase.</li>
+<li><strong>Privacy details.</strong> No source says what the search provider gets. No source confirms the default of "Model Improvement" for a new account.</li>
+<li><strong>The token count for this guide's run.</strong> The figure of about 900,000 is a sum of five task notes, added by hand.</li>
+</ul>
+
+<h3>When to check this guide again</h3>
+<ul>
+<li>Anthropic ships a new model.</li>
+<li>The Claude Code docs for workflows or web tools change.</li>
+<li>An outside study tests the current models.</li>
+</ul>
+<p><strong>A habit that helps:</strong> keep a few research questions for which you know the right answer. Run them after each model change. Score each run on five things: are the facts right, do the sources back the claims, is it complete, are the sources good, and did it waste tool calls. This is the guide's own advice. The five points come from Anthropic's 2025 post.</p>
+</section>
+
+<!-- 11 -->
+<section id="sources">
+<h2>11. Sources</h2>
+<p>All pages were read on 19 November 2026. Anthropic's docs pages show no date.</p>
+
+<h3>Independent studies</h3>
+<ul>
+<li><a href="https://arxiv.org/html/2605.06635v1">Cited but Not Verified</a>, arXiv, May 2026</li>
+<li><a href="https://arxiv.org/html/2604.03173v1">Detecting and Correcting Reference Hallucinations</a>, arXiv, April 2026</li>
+<li><a href="https://arxiv.org/html/2509.04499v1">DeepTRACE</a>, arXiv, September 2025. Microsoft Research is a co-author, and the test includes Copilot.</li>
+<li><a href="https://www.cjr.org/tow_center/we-compared-eight-ai-search-engines-theyre-all-bad-at-citing-news.php">Tow Center study of AI search</a>, March 2025</li>
+<li><a href="https://www.ebu.ch/news/2025/10/ai-s-systemic-distortion-of-news-is-consistent-across-languages-and-territories-international-study-by-public-service-broadcaste">EBU and BBC news study</a>, October 2025</li>
+<li><a href="https://www.theregister.com/2025/02/12/bbc_ai_news_accuracy/">BBC study, as reported by The Register</a>, February 2025. Search summary only.</li>
+<li><a href="https://epub.ub.uni-muenchen.de/129131/1/1-s2.0-S104160802500158X-main.pdf">Fendt et al., review of 64 trials</a>, 2025. Search summary only.</li>
+<li><a href="https://www.damiencharlotin.com/hallucinations/">AI Hallucination Cases database</a></li>
+<li><a href="https://aimultiple.com/agentic-search">AIMultiple search tool test</a>, updated November 2026</li>
+</ul>
+
+<h3>Anthropic: claude.ai help pages</h3>
+<ul>
+<li><a href="https://support.claude.com/en/articles/11095361-when-should-i-use-web-search-extended-thinking-and-research">When should I use web search, extended thinking, and research?</a></li>
+<li><a href="https://support.claude.com/en/articles/11088861-use-research-on-claude">Use research on Claude</a></li>
+<li><a href="https://support.claude.com/en/articles/10684626-enable-and-use-web-search">Enable and use web search</a></li>
+<li><a href="https://support.claude.com/en/articles/16761823-claude-cowork-and-chat-are-one-claude">Claude Cowork and chat are one Claude</a></li>
+<li><a href="https://support.claude.com/en/articles/12902428-use-claude-in-chrome-safely">Use Claude in Chrome safely</a></li>
+<li><a href="https://www.anthropic.com/news/integrations">Claude can now connect to your world</a>, May 2025. Search summary only.</li>
+</ul>
+
+<h3>Anthropic: Claude Code docs</h3>
+<ul>
+<li><a href="https://code.claude.com/docs/en/workflows">Dynamic workflows</a></li>
+<li><a href="https://code.claude.com/docs/en/tools-reference">Tools reference</a></li>
+<li><a href="https://code.claude.com/docs/en/best-practices">Best practices</a></li>
+<li><a href="https://code.claude.com/docs/en/permissions">Permissions</a></li>
+<li><a href="https://code.claude.com/docs/en/sandboxing">Sandboxing</a></li>
+<li><a href="https://code.claude.com/docs/en/mcp">MCP</a></li>
+</ul>
+
+<h3>Anthropic: API and prompt docs</h3>
+<ul>
+<li><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool">Web search tool</a></li>
+<li><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-fetch-tool">Web fetch tool</a></li>
+<li><a href="https://platform.claude.com/docs/en/about-claude/models/overview">Models overview</a></li>
+<li><a href="https://platform.claude.com/docs/en/about-claude/models/choosing-a-model">Choosing the right model</a></li>
+<li><a href="https://platform.claude.com/docs/en/managed-agents/overview">Managed Agents overview</a></li>
+<li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices">Prompting best practices</a></li>
+<li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5">Prompting Claude Fable 5</a></li>
+<li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5-1">Prompting Claude Fable 5.1</a></li>
+<li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5-2">Prompting Claude Fable 5.2</a></li>
+<li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5">Prompting Claude Opus 5</a></li>
+<li><a href="https://claude.com/resources/articles/using-claude-opus-5-5-as-your-daily-driver-for-knowledge-work">Using Claude Opus 5.5 as your daily driver</a>, 12 November 2026</li>
+<li><a href="https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations">Reduce hallucinations</a></li>
+</ul>
+
+<h3>Anthropic: posts, safety and privacy</h3>
+<ul>
+<li><a href="https://www.anthropic.com/engineering/multi-agent-research-system">How we built our multi-agent research system</a>, June 2025. Written for Opus 4 and Sonnet 4.</li>
+<li><a href="https://raw.githubusercontent.com/anthropics/anthropic-cookbook/main/patterns/agents/prompts/research_lead_agent.md">Research lead agent prompt</a>, for the Claude 4 models</li>
+<li><a href="https://www.anthropic.com/research/prompt-injection-defenses">Prompt injection defenses</a>, November 2025</li>
+<li><a href="https://privacy.claude.com/en/articles/10023580-is-my-data-used-for-model-training">Is my data used for model training? (personal plans)</a></li>
+<li><a href="https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training">Is my data used for model training? (business plans)</a></li>
+<li><a href="https://www.anthropic.com/news/updates-to-our-consumer-terms">Updates to our consumer terms</a>, August 2025</li>
+</ul>
+
+<h3>User reports and views</h3>
+<ul>
+<li><a href="https://quesma.com/blog/custom-deep-research-pipeline/">Quesma blog on a deep research pipeline</a>, July 2026</li>
+<li><a href="https://simonwillison.net/2026/Aug/27/breaking-claude-code-opus-5-auto-mode">Simon Willison on the auto mode attack</a>, August 2026</li>
+<li><a href="https://simonwillison.net/2026/Jul/21/cat-and-thariq/">Simon Willison's notes on the Claude Code team</a>, July 2026</li>
+<li><a href="https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/">The lethal trifecta</a>, June 2025. Search summary only.</li>
+<li><a href="https://the-decoder.com/claude-cowork-hit-with-file-stealing-prompt-injection-days-after-anthropics-launch/">The Decoder on the Cowork attack</a>, January 2026. Search summary only.</li>
+<li><a href="https://www.firecrawl.dev/blog/claude-web-fetch-vs-firecrawl">Firecrawl's own test of page readers</a>, March 2026. A seller's numbers.</li>
+</ul>
+</section>
+
+</main>
+</body>
+</html>
